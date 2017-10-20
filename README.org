@@ -1,7 +1,9 @@
+# _*_ coding: utf-8 _*_
 * edupt-julia
 
 パストレーシングレンダラ[[https://github.com/githole/edupt][edupt]]を元にJuliaで実装しました。
 
 Copyright (c) 2017 hrtk2299
 Released under the MIT license
+
 http://opensource.org/licenses/mit-license.php

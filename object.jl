@@ -6,9 +6,12 @@ module Object
 importall Structure
 
 export Camera, Material, Hitpoint, Intersection, Sphere
-export intersect
+export intersect, intersect_opt
+export DIFFUSE, SPECULAR, REFRACTION
+export EPS, IOR
 
-const kEPS = 1e-6
+const EPS = 1e-6
+const IOR = 1.5
 
 struct Camera
     pos::Point
@@ -32,15 +35,16 @@ struct Camera
     end
 end
 
-struct Material
-    diffuse::Color
-    emission::Color
-    specular::Float64
-    transparency::Float64
-    kIor::Float64
+@enum REFLECTION_TYPE DIFFUSE=1 SPECULAR=2 REFRACTION=3
 
-    function Material(diffuse, emission=Color([0, 0, 0]), specular=0.0, transparency=0.0, kIor=1.0)
-        new(diffuse, emission, specular, transparency, kIor)
+struct Material
+    color::Color
+    emission::Color
+    ref_type::REFLECTION_TYPE
+    ior::Float64
+
+    function Material(color, emission=Color([0, 0, 0]), ref_type=DIFFUSE, ior=1.0)
+        new(color, emission, ref_type, ior)
     end
 end
 
@@ -85,11 +89,11 @@ function intersect(sphere::Sphere, ray::Ray)::Hitpoint
     t1 = b - sqrt_D4
     t2 = b + sqrt_D4
 
-    if (t1 < kEPS && t2 < kEPS)
+    if (t1 < EPS && t2 < EPS)
         return Hitpoint()
     end
 
-    if t1 > kEPS
+    if t1 > EPS
         pos = ray.org + t1 * ray.dir
         normal = normalize(pos - sphere.center)
         return Hitpoint(t1, pos, normal)
@@ -100,6 +104,33 @@ function intersect(sphere::Sphere, ray::Ray)::Hitpoint
     end
 end
 
+function intersect_opt(sphere::Sphere, ray::Ray)::Hitpoint
+    center_minus_rayorg = sphere.center - ray.org
+    b = ray.dir'center_minus_rayorg
+    c = center_minus_rayorg'center_minus_rayorg - sphere.radius^2
+    D4 = b^2 - c
+
+    if D4 < 0
+        return Hitpoint()
+    end
+
+    sqrt_D4 = sqrt(D4)
+    t1 = b - sqrt_D4
+    t2 = b + sqrt_D4
+
+    if t1 > EPS
+        pos = ray.org + t1 * ray.dir
+        normal = normalize(pos - sphere.center)
+        return Hitpoint(t1, pos, normal)
+    elseif t2 > EPS
+        pos = ray.org + t2 * ray.dir
+        normal = normalize(pos - sphere.center)
+        return Hitpoint(t2, pos, normal)
+    else
+        return Hitpoint()
+    end
+end
+
 end
 
 
@@ -107,12 +138,11 @@ function test_object()
     obj = Object
 
     # Mateiral test
-    material = obj.Material(obj.Color([0.5, 0.5, 0.5]), obj.Color([0, 0, 0]), 1.0, 2.0, 1.0)
-    @assert material.diffuse == obj.Color([0.5, 0.5 ,0.5])
+    material = obj.Material(obj.Color([0.5, 0.5, 0.5]), obj.Color([0, 0, 0]), obj.DIFFUSE, 1.0)
+    @assert material.color == obj.Color([0.5, 0.5 ,0.5])
     @assert material.emission == obj.Color([0, 0, 0])
-    @assert material.specular == 1.0
-    @assert material.transparency == 2.0
-    @assert material.kIor == 1.0
+    @assert material.ref_type == obj.DIFFUSE
+    @assert material.ior == 1.0
 
     println("Material test: OK")
 
