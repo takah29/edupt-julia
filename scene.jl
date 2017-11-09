@@ -14,7 +14,7 @@ mutable struct SceneData
     SceneData(object=Vector{Sphere}[]) = new(object)
 end
 
-function intersect(scene_data::SceneData, ray::Ray)
+function intersect(scene_data::SceneData, ray::Ray)::Intersection
     is = Intersection()
 
     for (id, obj) in enumerate(scene_data.objects)
@@ -41,23 +41,23 @@ function test_scene()
     scene_data = sn.SceneData(objects)
     @assert length(scene_data.objects) == 0
 
-    push!(scene_data.objects, sn.Sphere(0.5, sn.Point([1, 0, 0]), sn.Material(sn.Color([0.5, 0.5, 0.5]))))
+    push!(scene_data.objects, sn.Sphere(0.5, sn.Point(1., 0., 0.), sn.Material(sn.Color(0.5, 0.5, 0.5))))
     @assert length(scene_data.objects) == 1
 
     println("SceneData test: OK")
 
     # intersect_scene test
-    ray = sn.Ray(sn.Point([0, 0, 0]), sn.Vec([1, 0, 0]))
+    ray = sn.Ray(sn.Point(0., 0., 0.), sn.Vec(1., 0., 0.))
     intersection = sn.intersect(scene_data, ray)
     @assert isapprox(intersection.hitpoint.distance, 0.5)
     @assert intersection.object_id == 1
 
-    push!(scene_data.objects, sn.Sphere(0.5, sn.Point([2, 0, 0]), sn.Material(sn.Color([0.5, 0.5, 0.5]))))
+    push!(scene_data.objects, sn.Sphere(0.5, sn.Point(2., 0., 0.), sn.Material(sn.Color(0.5, 0.5, 0.5))))
     intersection = sn.intersect(scene_data, ray)
     @assert isapprox(intersection.hitpoint.distance, 0.5)
     @assert intersection.object_id == 1
 
-    push!(scene_data.objects, sn.Sphere(0.5, sn.Point([0.6, 0, 0]), sn.Material(sn.Color([0.5, 0.5, 0.5]))))
+    push!(scene_data.objects, sn.Sphere(0.5, sn.Point(0.6, 0., 0.), sn.Material(sn.Color(0.5, 0.5, 0.5))))
     intersection = sn.intersect(scene_data, ray)
     @assert isapprox(intersection.hitpoint.distance, 0.1)
     @assert intersection.object_id == 3
